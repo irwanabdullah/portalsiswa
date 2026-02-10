@@ -3,82 +3,497 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Situs Dalam Pengembangan</title>
+    <title>Portal Siswa</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+
     <style>
-        * {
-            margin: 0;
-            padding: 0;
-            box-sizing: border-box;
-            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+        body { background-color: #eef2f7; font-family: 'Segoe UI', sans-serif; }
+        .hidden { display: none !important; }
+        .login-card { border-radius: 15px; box-shadow: 0 8px 20px rgba(0,0,0,0.1); border: none; }
+        .header-bg { background: linear-gradient(135deg, #0d6efd, #0a58ca); color: white; padding: 20px 0; margin-bottom: 20px; box-shadow: 0 4px 6px rgba(0,0,0,0.1); }
+        .profile-img { width: 140px; height: 180px; object-fit: cover; border: 4px solid white; box-shadow: 0 4px 8px rgba(0,0,0,0.2); border-radius: 8px; }
+        
+        /* Style untuk area cetak PDF (Kertas A4 Look) */
+        #printable-area {
+            background: white; padding: 40px; border: 1px solid #ccc;
+            width: 100%; max-width: 800px; margin: 0 auto;
+            font-family: 'Times New Roman', serif; position: relative;
         }
+        .kop-surat { border-bottom: 3px double black; padding-bottom: 10px; margin-bottom: 20px; text-align: center; }
+        .status-lulus { font-size: 24px; font-weight: bold; padding: 10px; border: 2px solid #198754; color: #198754; display: inline-block; margin: 20px 0; border-radius: 8px; }
+        .status-gagal { font-size: 24px; font-weight: bold; padding: 10px; border: 2px solid #dc3545; color: #dc3545; display: inline-block; margin: 20px 0; border-radius: 8px; }
+    
+			footer {
+			font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+		}
+		footer hr {
+			width: 50%; /* Membuat garis pemisah tidak terlalu lebar agar elegan */
+			margin: 20px auto;
+			opacity: 0.2;
+		}
+		.text-muted {
+			font-size: 0.85rem;
+		}
+		
+		/* Pengaturan khusus untuk Mobile */
+		@media (max-width: 768px) {
+		.container {
+			padding-left: 10px;
+			padding-right: 10px;
+		}
+		
+		/* Membuat foto profil berada di tengah saat di HP */
+		.profile-section {
+			text-align: center;
+		}
+		
+		#img-preview {
+			width: 120px; /* Sedikit lebih kecil di HP agar tidak makan tempat */
+			margin-bottom: 15px;
+		}
 
-        body {
-            background-color: #f4f7f6;
-            display: flex;
-            justify-content: center;
-            align-items: center;
-            height: 100vh;
-            color: #333;
-            text-align: center;
-        }
+		/* Membuat tabel SKL bisa di-scroll ke samping jika kepanjangan */
+		.table-responsive-mobile {
+			display: block;
+			width: 100%;
+			overflow-x: auto;
+			-webkit-overflow-scrolling: touch;
+		}
 
-        .container {
-            max-width: 600px;
-            padding: 20px;
-        }
-
-        .icon {
-            font-size: 80px;
-            margin-bottom: 20px;
-            color: #ffcc00; /* Warna kuning peringatan */
-        }
-
-        h1 {
-            font-size: 2.5rem;
-            margin-bottom: 10px;
-            color: #2c3e50;
-        }
-
-        p {
-            font-size: 1.1rem;
-            line-height: 1.6;
-            color: #7f8c8d;
-            margin-bottom: 30px;
-        }
-
-        .loader {
-            border: 5px solid #f3f3f3;
-            border-top: 5px solid #3498db;
-            border-radius: 50%;
-            width: 50px;
-            height: 50px;
-            animation: spin 1s linear infinite;
-            margin: 0 auto 20px;
-        }
-
-        @keyframes spin {
-            0% { transform: rotate(0deg); }
-            100% { transform: rotate(360deg); }
-        }
-
-        .footer {
-            font-size: 0.9rem;
-            color: #bdc3c7;
-        }
-    </style>
+		/* Ukuran font tombol diperbesar agar mudah ditekan jari */
+		.btn {
+			width: 100%; /* Tombol jadi lebar penuh di HP */
+			margin-bottom: 10px;
+			padding: 12px;
+		}
+	}
+	
+	</style>
 </head>
 <body>
 
+<nav class="navbar navbar-dark bg-dark shadow-sm">
     <div class="container">
-        <div class="icon">🚧</div>
-        <div class="loader"></div>
-        <h1>Sedang Dalam Pengembangan</h1>
-        <p>Maaf atas ketidaknyamanannya. Kami sedang bekerja keras untuk memberikan pengalaman terbaik bagi Anda. Silakan kembali lagi nanti!</p>
-        
-        <div class="footer">
-            &copy; 2026 IrwanAbdullah.my.id. Semua Hak Dilindungi.
+        <span class="navbar-brand fw-bold"><i class="fas fa-graduation-cap me-2"></i>PORTAL SISWA</span>
+        <button id="btn-logout" onclick="location.reload()" class="btn btn-outline-danger btn-sm hidden fw-bold">KELUAR</button>
+    </div>
+</nav>
+
+<div class="container pb-5">
+
+    <div id="login-section" class="row justify-content-center mt-5">
+        <div class="col-md-4">
+            <div class="card login-card p-4">
+                <div class="text-center mb-4">
+                    <i class="fas fa-user-circle fa-4x text-primary mb-3"></i>
+                    <h4 class="fw-bold">Login Siswa</h4>
+                    <p class="text-muted small">Gunakan NISN untuk Username & Password</p>
+                </div>
+                <div class="mb-3">
+                    <label class="fw-bold small">Username</label>
+                    <input type="number" id="login-nisn" class="form-control" placeholder="Masukkan NISN">
+                </div>
+                <div class="mb-4">
+                    <label class="fw-bold small">Password</label>
+                    <input type="password" id="login-pass" class="form-control" placeholder="Masukkan NISN kembali">
+                </div>
+                <button onclick="handleLogin()" class="btn btn-primary w-100 fw-bold py-2">MASUK APLIKASI</button>
+            </div>
         </div>
     </div>
 
+    <div id="dashboard-section" class="hidden">
+        <div class="header-bg rounded mt-3 text-center">
+            <h3 id="head-nama" class="fw-bold mb-0">Nama Siswa</h3>
+            <p id="head-nisn" class="mb-0 opacity-75">NISN: -</p>
+        </div>
+
+        <ul class="nav nav-tabs nav-fill mb-4 bg-white rounded shadow-sm" id="myTab" role="tablist">
+            <li class="nav-item" role="presentation">
+                <button class="nav-link active fw-bold py-3" id="biodata-tab" data-bs-toggle="tab" data-bs-target="#biodata" type="button"><i class="fas fa-id-card me-2"></i>UPDATE DATA PRIBADI</button>
+            </li>
+            <li class="nav-item" role="presentation">
+                <button class="nav-link fw-bold py-3" id="pengumuman-tab" data-bs-toggle="tab" data-bs-target="#" type="button"><i class="fas fa-scroll me-2"></i>PENGUMUMAN & SKL</button>
+            </li>
+        </ul>
+		
+		
+        <div class="tab-content" id="myTabContent">
+            
+            <div class="tab-pane fade show active" id="biodata" role="tabpanel">
+                <div class="row g-4">
+                    <div class="col-lg-4">
+                        <div class="card border-0 shadow-sm p-3 text-center h-100">
+                            <h6 class="fw-bold text-muted mb-3">FOTO PROFIL</h6>
+                            <img id="img-preview" src="" crossorigin="anonymous" class="img-thumbnail" style="width: 150px; height: 200px; object-fit: cover;">
+                            <input type="file" id="up-foto" hidden accept="image/*" onchange="processUpload('foto')">
+                            <button onclick="document.getElementById('up-foto').click()" class="btn btn-outline-primary w-100 btn-sm mb-2"><i class="fas fa-camera me-1"></i> Ganti Foto (JPG)</button>
+                        </div>
+                    </div>
+                    <div class="col-lg-8">
+                        <div class="card border-0 shadow-sm p-4 h-100">
+                            <h5 class="fw-bold border-bottom pb-2 mb-3">Formulir Data Diri</h5>
+                            <div class="row g-3">
+                                <div class="col-12 col-md-6">
+                                    <label class="small fw-bold">Nama Lengkap (Terkunci)</label>
+                                    <input id="i-nama" class="form-control bg-light" disabled>
+                                </div>
+                                <div class="col-md-6">
+                                    <label class="small fw-bold">NIK (Terkunci)</label>
+                                    <input id="i-nik" class="form-control bg-light" disabled>
+                                </div>
+                                <div class="col-md-6">
+                                    <label class="small fw-bold">Tempat, Tgl Lahir (Terkunci)</label>
+                                    <input id="i-ttl" class="form-control bg-light" disabled>
+                                </div>
+                                <div class="col-md-6">
+                                    <label class="small fw-bold">Nomor HP/WA <span class="text-danger">*</span></label>
+                                    <input id="i-hp" class="form-control" placeholder="08xxx">
+                                </div>
+                                <div class="col-12">
+                                    <label class="small fw-bold">Alamat Domisili <span class="text-danger">*</span></label>
+                                    <textarea id="i-alamat" class="form-control" rows="2"></textarea>
+                                </div>
+                                <div class="col-6 col-md-3">
+                                    <label class="small">Jml Saudara</label>
+                                    <input id="i-saudara" type="number" class="form-control">
+                                </div>
+                                <div class="col-6 col-md-3">
+									<label class="small">Tinggi (cm)</label>
+									<input id="i-tinggi" type="number" class="form-control">
+								</div>
+								<div class="col-6 col-md-3">
+									<label class="small">Berat (kg)</label>
+									<input id="i-berat" type="number" class="form-control">
+								</div>
+								<div class="col-6 col-md-3">
+									<label class="small">Lingkar Kepala (cm)</label>
+									<input id="i-lingkar" type="number" class="form-control">
+								</div>
+                                </div>
+                                <div class="col-12 mt-3">
+                                    <label class="small fw-bold">Upload Kartu Keluarga (KK)</label>
+                                    <div class="input-group">
+                                        <input id="i-kk-link" class="form-control bg-light" readonly placeholder="Belum ada file">
+                                        <input type="file" id="up-kk" hidden accept="image/*,application/pdf" onchange="processUpload('kk')">
+                                        <button class="btn btn-secondary" onclick="document.getElementById('up-kk').click()"><i class="fas fa-upload"></i> Upload</button>
+                                    </div>
+                                </div>
+                                <div class="col-12 mt-4">
+                                    <button onclick="saveData()" class="btn btn-success w-100 fw-bold py-2"><i class="fas fa-save me-2"></i> SIMPAN PERUBAHAN</button>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="tab-pane fade" id="pengumuman" role="tabpanel">
+                <div class="row justify-content-center">
+                    <div class="col-lg-10">
+                        <div class="card border-0 shadow-sm p-4">
+                            <div class="d-flex justify-content-between align-items-center mb-3">
+                                <h5 class="fw-bold text-primary">Hasil Kelulusan</h5>
+                                <button onclick="downloadPDF()" class="btn btn-danger fw-bold"><i class="fas fa-file-pdf me-2"></i> DOWNLOAD SKL</button>
+                            </div>
+                            
+                            <div id="printable-area" class="shadow-sm">
+                                <div class="kop-surat">
+                                    <h4 class="fw-bold mb-0">UPT SPF SMP NEGERI 13 MAKASSAR</h4>
+                                    <p class="mb-0 small">Jl. Tamalate VI No. 2, Perumnas, Makassar</p>
+                                    <p class="mb-0 small">Telp: 0819-9979-3085 | Website: https://smpn13makassar.my.id</p>
+                                </div>
+                                
+                                <div class="text-center mb-4">
+                                    <h5 class="fw-bold text-decoration-underline">SURAT KETERANGAN KELULUSAN</h5>
+                                    <p>Nomor: 800/..../421/SKL/V/2026</p>
+                                </div>
+
+                                <p>Yang bertanda tangan di bawah ini Kepala Sekolah UPT SPF SMPN 13 Makassar, menerangkan bahwa:</p>
+                                
+                                <table class="table table-borderless table-sm w-75 mx-auto">
+                                    <tr><td width="30%">Nama Lengkap</td><td width="5%">:</td><td class="fw-bold" id="sk-nama">Loading...</td></tr>
+                                    <tr><td>NISN</td><td>:</td><td id="sk-nisn">Loading...</td></tr>
+                                    <tr><td>Tempat, Tgl Lahir</td><td>:</td><td id="sk-ttl">Loading...</td></tr>
+                                    <tr><td>Nilai Rata-rata</td><td>:</td><td id="sk-nilai">Loading...</td></tr>
+                                </table>
+
+                                <div class="text-center mt-3">
+                                    <p class="mb-1">Dinyatakan:</p>
+                                    <div id="sk-status-badge">Memuat Data...</div>
+                                    <p class="mt-2">Demikian surat keterangan ini dibuat untuk dapat dipergunakan sebagaimana mestinya.</p>
+                                </div>
+
+                                <div class="row mt-5">
+                                    <div class="col-6 offset-6 text-center">
+                                        <p>Makassar, 20 Mei 2026<br>Kepala Sekolah,</p>
+                                        <br><br>ttd<br>
+                                        <p class="fw-bold text-decoration-underline">Drs. Ramli, M.Pd</p>
+                                        <p>NIP. 1966xxxx</p>
+                                    </div>
+                                </div>
+                            </div>
+                            </div>
+                    </div>
+                </div>
+            </div>
+
+        </div>
+    </div>
+</div>
+
+<footer class="mt-5 mb-4">
+    <hr>
+    <div class="text-center text-muted">
+        <p class="mb-0">&copy; <span id="current-year"></span> SMPN 13 MAKASSAR</p>
+        <small>Sistem Informasi - All Rights Reserved</small>
+    </div>
+</footer>
+
+<script>
+    const SCRIPT_URL = "https://script.google.com/macros/s/AKfycbzIROG5WTu2taFcmQ4zlJ-6bmIHP-IyQA0VGHzXPeLKTUZeK7znJnd0SGB2y1ddOrFd/exec"; // <--- PASTE URL WEB APP DISINI
+    let currentData = {};
+	
+			// Menampilkan tahun berjalan secara dinamis
+		document.getElementById('current-year').textContent = new Date().getFullYear();
+
+		// Jalankan ini saat login sukses
+		function onLoginSuccess(response) {
+			localStorage.setItem('nisn_login', response.data.nisn); // Simpan NISN di browser
+			currentData = response;
+			renderDashboard(response.data, response.pengumuman);
+			// Pindah ke dashboard...
+		}
+
+		// Jalankan ini otomatis saat halaman pertama kali dibuka (Auto-Login)
+		window.onload = function() {
+			const savedNISN = localStorage.getItem('nisn_login');
+			if (savedNISN) {
+				// Langsung panggil fungsi login otomatis jika ada NISN tersimpan
+				doLogin(savedNISN); 
+			}
+			
+			// Set tahun footer
+			document.getElementById('current-year').textContent = new Date().getFullYear();
+		};
+
+
+    // --- LOGIC LOGIN ---
+    async function handleLogin() {
+        const u = document.getElementById('login-nisn').value;
+        const p = document.getElementById('login-pass').value;
+
+        if(!u || !p) return Swal.fire('Error', 'Harap isi NISN dan Password', 'warning');
+
+        // Validasi Frontend: User & Pass harus sama
+        if(u !== p) return Swal.fire('Gagal', 'Password harus sama dengan NISN!', 'error');
+
+        loading(true, 'Sedang memproses...');
+        
+        try {
+            const response = await fetch(SCRIPT_URL, {
+                method: "POST",
+                body: JSON.stringify({ action: "login", nisn: u, password: p })
+            });
+            const res = await response.json();
+            loading(false);
+
+            if(res.status === "success") {
+                currentData = res; // Simpan data di memori
+                renderDashboard(res.data, res.pengumuman);
+                document.getElementById('login-section').classList.add('hidden');
+                document.getElementById('dashboard-section').classList.remove('hidden');
+                document.getElementById('btn-logout').classList.remove('hidden');
+            } else {
+                Swal.fire('Login Gagal', res.msg, 'error');
+            }
+        } catch(e) {
+            loading(false);
+            Swal.fire('Error', 'Gagal terhubung ke server', 'error');
+        }
+    }
+
+    // --- RENDER DATA KE HTML ---
+    function renderDashboard(p, l) {
+	const imgElement = document.getElementById('img-preview');
+    
+    if (p.foto && p.foto !== "") {
+        // Kita ambil ID-nya saja dari link Drive Anda
+        let fileId = "";
+        const match = p.foto.match(/id=([\w-]+)|d\/([\w-]+)/);
+        if (match) fileId = match[1] || match[2];
+
+        if (fileId) {
+            // Gunakan format link googleusercontent (lebih ramah browser)
+            imgElement.src = "https://lh3.googleusercontent.com/d/" + fileId;
+        } else {
+            imgElement.src = p.foto; // fallback jika format link beda
+        }
+    } else {
+        // Gunakan link lengkap (dengan https://) agar tidak error NAME_NOT_RESOLVED
+        imgElement.src = 'https://placehold.co/150x200?text=Foto+Kosong';
+    }
+	
+	// Perbaiki bagian ini di dalam script index.html
+		document.getElementById('img-preview').onerror = function() {
+			// Gunakan https:// agar browser tahu ini alamat web luar
+			if (!this.src.includes('placehold.co')) { 
+				this.src = 'https://placehold.co/150x200?text=Gagal+Load';
+			}
+			console.error("Link Drive ditolak atau tidak valid.");
+		};
+	
+        // 1. Update Header & Tab Biodata (Tetap seperti sebelumnya)
+        document.getElementById('head-nama').innerText = p.nama;
+        document.getElementById('head-nisn').innerText = "NISN: " + p.nisn;
+		
+    // Masukkan data ke input form agar tidak kosong saat di-reload
+        document.getElementById('i-nama').value = p.nama;
+        document.getElementById('i-nik').value = p.nik;
+        document.getElementById('i-ttl').value = p.tmpLahir + ", " + p.tglLahir;
+        document.getElementById('i-hp').value = p.hp;
+        document.getElementById('i-alamat').value = p.alamat;
+        document.getElementById('i-saudara').value = p.saudara;
+        document.getElementById('i-tinggi').value = p.tinggi;
+        document.getElementById('i-berat').value = p.berat;
+		document.getElementById('i-lingkar').value = p.lingkar;
+        document.getElementById('i-kk-link').value = p.kk || "";
+
+        // 2. Update Data di dalam Surat (SKL)
+        document.getElementById('sk-nama').innerText = p.nama;
+        document.getElementById('sk-nisn').innerText = p.nisn;
+        document.getElementById('sk-ttl').innerText = p.tmpLahir + ", " + p.tglLahir;
+        document.getElementById('sk-nilai').innerText = l.nilai; // Mengambil nilai dari Sheet Pengumuman Kolom F
+        
+        // 3. Update Badge Status Lulus
+        const badge = document.getElementById('sk-status-badge');
+        const statusSiswa = l.status.trim().toUpperCase();
+
+        if(statusSiswa === "LULUS") {
+            badge.innerText = "L U L U S";
+            badge.className = "status-lulus"; // Hijau
+        } else if (statusSiswa === "TIDAK LULUS") {
+            badge.innerText = "TIDAK LULUS";
+            badge.className = "status-gagal"; // Merah
+        } else {
+            badge.innerText = "BELUM TERSEDIA";
+            badge.style.color = "orange";
+            badge.style.border = "2px solid orange";
+            badge.style.padding = "10px";
+            badge.style.display = "inline-block";
+        }
+    }
+
+    // --- UPDATE DATA ---
+    async function saveData() {
+        const form = {
+            hp: document.getElementById('i-hp').value,
+            alamat: document.getElementById('i-alamat').value,
+            saudara: document.getElementById('i-saudara').value,
+            tinggi: document.getElementById('i-tinggi').value,
+            berat: document.getElementById('i-berat').value,
+            lingkar: document.getElementById('i-lingkar').value // Jika ada input lingkar, tambahkan
+        };
+
+        loading(true, 'Menyimpan data...');
+        const res = await apiCall({ action: "updateData", nisn: currentData.data.nisn, form: form });
+        loading(false);
+        if(res.status === "success") Swal.fire('Berhasil', 'Data berhasil diperbarui', 'success');
+        else Swal.fire('Gagal', 'Terjadi kesalahan', 'error');
+    }
+
+    // --- UPLOAD FILE (Versi Instant Preview) ---
+    function processUpload(tipe) {
+        const fileInput = document.getElementById(tipe === 'foto' ? 'up-foto' : 'up-kk');
+        const file = fileInput.files[0];
+        if(!file) return;
+
+        // Validasi ukuran (Opsional, misal max 2MB)
+        if(file.size > 2 * 1024 * 1024) {
+            Swal.fire('Terlalu Besar', 'Maksimal ukuran file 2MB', 'warning');
+            return;
+        }
+
+        const reader = new FileReader();
+        reader.readAsDataURL(file);
+        
+        reader.onload = async (e) => {
+            const base64Data = e.target.result;
+
+            // 1. EFEK INSTANT: Langsung tampilkan di layar sebelum upload selesai
+            if(tipe === 'foto') {
+                document.getElementById('img-preview').src = base64Data;
+            } else {
+                document.getElementById('i-kk-link').value = "Sedang mengupload...";
+            }
+
+            // 2. PROSES UPLOAD KE SERVER (Background)
+            // Kita pakai loading kecil saja agar tidak mengganggu, atau loading penuh terserah Anda
+            Swal.fire({
+                title: 'Mengupload...',
+                text: 'Mohon tunggu sebentar',
+                allowOutsideClick: false,
+                didOpen: () => Swal.showLoading()
+            });
+
+            try {
+                const res = await apiCall({
+                    action: "uploadFile",
+                    base64: base64Data,
+                    filename: tipe.toUpperCase() + "_" + currentData.data.nisn + "_" + file.name,
+                    nisn: currentData.data.nisn,
+                    tipe: tipe
+                });
+
+                if(res.status === "success") {
+                    Swal.fire('Sukses', 'Foto berhasil disimpan permanen!', 'success');
+                    // Update link KK jika yang diupload adalah KK
+                    if(tipe === 'kk') document.getElementById('i-kk-link').value = "File Berhasil Terupload";
+                } else {
+                    Swal.fire('Gagal', res.msg, 'error');
+                }
+            } catch (err) {
+                Swal.fire('Error', 'Gagal koneksi server', 'error');
+            }
+        };
+    }
+
+    // --- DOWNLOAD PDF ---
+    function downloadPDF() {
+        const { jsPDF } = window.jspdf;
+        const element = document.getElementById('printable-area');
+
+        // Scroll ke atas agar capture rapi
+        window.scrollTo(0,0);
+        loading(true, 'Membuat PDF...');
+
+        html2canvas(element, { scale: 2 }).then(canvas => {
+            const imgData = canvas.toDataURL('image/png');
+            const pdf = new jsPDF('p', 'mm', 'a4');
+            const imgWidth = 210; 
+            const imgHeight = canvas.height * imgWidth / canvas.width;
+            
+            pdf.addImage(imgData, 'PNG', 0, 0, imgWidth, imgHeight);
+            pdf.save(`SKL_${currentData.data.nisn}.pdf`);
+            loading(false);
+        });
+    }
+
+    // --- UTILS ---
+    async function apiCall(body) {
+        const r = await fetch(SCRIPT_URL, { method: "POST", body: JSON.stringify(body) });
+        return await r.json();
+    }
+    function loading(show, msg) {
+        if(show) Swal.fire({ title: msg, allowOutsideClick: false, didOpen: () => Swal.showLoading() });
+        else Swal.close();
+    }
+</script>
+
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
 </body>
 </html>
