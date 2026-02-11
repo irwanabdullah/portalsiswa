@@ -183,6 +183,14 @@
                                         <button class="btn btn-secondary" onclick="document.getElementById('up-kk').click()"><i class="fas fa-upload"></i> Upload</button>
                                     </div>
                                 </div>
+								<div class="col-12 mt-3">
+									<label class="small fw-bold">Upload Ijazah</label>
+									<div class="input-group">
+										<input id="i-ijazah-link" class="form-control bg-light" readonly placeholder="Belum ada file">
+										<input type="file" id="up-ijazah" hidden accept="image/*,application/pdf" onchange="processUpload('ijazah')">
+										<button class="btn btn-secondary" onclick="document.getElementById('up-ijazah').click()"><i class="fas fa-upload"></i> Upload</button>
+									</div>
+								</div>
                                 <div class="col-12 mt-4">
                                     <button onclick="saveData()" class="btn btn-success w-100 fw-bold py-2"><i class="fas fa-save me-2"></i> SIMPAN PERUBAHAN</button>
                                 </div>
@@ -255,7 +263,7 @@
 </footer>
 
 <script>
-    const SCRIPT_URL = "https://script.google.com/macros/s/AKfycbzIROG5WTu2taFcmQ4zlJ-6bmIHP-IyQA0VGHzXPeLKTUZeK7znJnd0SGB2y1ddOrFd/exec"; // <--- PASTE URL WEB APP DISINI
+    const SCRIPT_URL = "https://script.google.com/macros/s/AKfycbyOboh8NLiJQd_rBbBLnV4b_KQPCX14_KJZHgf2Pm5zco9rn84Ev6la7PRC_cJm-kkXmQ/exec"; // <--- PASTE URL WEB APP DISINI
     let currentData = {};
 	
 			// Menampilkan tahun berjalan secara dinamis
@@ -362,6 +370,7 @@
         document.getElementById('i-berat').value = p.berat;
 		document.getElementById('i-lingkar').value = p.lingkar;
         document.getElementById('i-kk-link').value = p.kk || "";
+		document.getElementById('i-ijazah-link').value = p.ijazah || "";
 
         // 2. Update Data di dalam Surat (SKL)
         document.getElementById('sk-nama').innerText = p.nama;
@@ -406,62 +415,85 @@
         else Swal.fire('Gagal', 'Terjadi kesalahan', 'error');
     }
 
-    // --- UPLOAD FILE (Versi Instant Preview) ---
-    function processUpload(tipe) {
-        const fileInput = document.getElementById(tipe === 'foto' ? 'up-foto' : 'up-kk');
-        const file = fileInput.files[0];
-        if(!file) return;
+    // --- UPLOAD FILE (Versi Lengkap: Foto, KK, Ijazah) ---
+	function processUpload(tipe) {
+		// 1. Ambil ID element secara dinamis
+		// Pola ID di HTML Anda: 'up-foto', 'up-kk', 'up-ijazah'
+		const fileInput = document.getElementById('up-' + tipe);
+		
+		// Safety check jika elemen tidak ditemukan
+		if (!fileInput) return; 
 
-        // Validasi ukuran (Opsional, misal max 2MB)
-        if(file.size > 2 * 1024 * 1024) {
-            Swal.fire('Terlalu Besar', 'Maksimal ukuran file 2MB', 'warning');
-            return;
-        }
+		const file = fileInput.files[0];
+		if(!file) return;
 
-        const reader = new FileReader();
-        reader.readAsDataURL(file);
-        
-        reader.onload = async (e) => {
-            const base64Data = e.target.result;
+		// Validasi ukuran (Max 2MB)
+		if(file.size > 2 * 1024 * 1024) {
+			Swal.fire('Terlalu Besar', 'Maksimal ukuran file 2MB', 'warning');
+			return;
+		}
 
-            // 1. EFEK INSTANT: Langsung tampilkan di layar sebelum upload selesai
-            if(tipe === 'foto') {
-                document.getElementById('img-preview').src = base64Data;
-            } else {
-                document.getElementById('i-kk-link').value = "Sedang mengupload...";
-            }
+		const reader = new FileReader();
+		reader.readAsDataURL(file);
+		
+		reader.onload = async (e) => {
+			const base64Data = e.target.result;
 
-            // 2. PROSES UPLOAD KE SERVER (Background)
-            // Kita pakai loading kecil saja agar tidak mengganggu, atau loading penuh terserah Anda
-            Swal.fire({
-                title: 'Mengupload...',
-                text: 'Mohon tunggu sebentar',
-                allowOutsideClick: false,
-                didOpen: () => Swal.showLoading()
-            });
+			// 2. EFEK INSTANT: Feedback visual sebelum upload selesai
+			if(tipe === 'foto') {
+				document.getElementById('img-preview').src = base64Data;
+			} else if (tipe === 'kk') {
+				document.getElementById('i-kk-link').value = "Sedang mengupload...";
+			} else if (tipe === 'ijazah') {
+				document.getElementById('i-ijazah-link').value = "Sedang mengupload...";
+			}
 
-            try {
-                const res = await apiCall({
-                    action: "uploadFile",
-                    base64: base64Data,
-                    filename: tipe.toUpperCase() + "_" + currentData.data.nisn + "_" + file.name,
-                    nisn: currentData.data.nisn,
-                    tipe: tipe
-                });
+			// 3. PROSES UPLOAD KE SERVER
+			Swal.fire({
+				title: 'Mengupload...',
+				text: 'Mohon tunggu sebentar',
+				allowOutsideClick: false,
+				didOpen: () => Swal.showLoading()
+			});
 
-                if(res.status === "success") {
-                    Swal.fire('Sukses', 'Foto berhasil disimpan permanen!', 'success');
-                    // Update link KK jika yang diupload adalah KK
-                    if(tipe === 'kk') document.getElementById('i-kk-link').value = "File Berhasil Terupload";
-                } else {
-                    Swal.fire('Gagal', res.msg, 'error');
-                }
-            } catch (err) {
-                Swal.fire('Error', 'Gagal koneksi server', 'error');
-            }
-        };
-    }
+			try {
+				const res = await apiCall({
+					action: "uploadFile",
+					base64: base64Data,
+					// Format nama file: TIPE_NISN_NAMASLI
+					filename: tipe.toUpperCase() + "_" + currentData.data.nisn + "_" + file.name,
+					nisn: currentData.data.nisn,
+					tipe: tipe // mengirim 'foto', 'kk', atau 'ijazah'
+				});
 
+				if(res.status === "success") {
+					Swal.fire('Sukses', 'File berhasil disimpan!', 'success');
+					
+					// 4. UPDATE TAMPILAN SETELAH SUKSES
+					// Mengisi kolom input dengan URL file dari Google Drive yang dikembalikan server
+					if(tipe === 'kk') {
+						document.getElementById('i-kk-link').value = res.url;
+					} else if (tipe === 'ijazah') {
+						document.getElementById('i-ijazah-link').value = res.url;
+					}
+
+					// Update data lokal (agar tidak perlu login ulang untuk melihat perubahan)
+					if (currentData && currentData.data) {
+						currentData.data[tipe] = res.url;
+					}
+
+				} else {
+					Swal.fire('Gagal', res.msg, 'error');
+					// Reset tulisan "Sedang mengupload..." jika gagal
+					if (tipe === 'kk') document.getElementById('i-kk-link').value = currentData.data.kk || "";
+					if (tipe === 'ijazah') document.getElementById('i-ijazah-link').value = currentData.data.ijazah || "";
+				}
+			} catch (err) {
+				console.error(err);
+				Swal.fire('Error', 'Gagal koneksi server', 'error');
+			}
+		};
+	}
     // --- DOWNLOAD PDF ---
     function downloadPDF() {
         const { jsPDF } = window.jspdf;
