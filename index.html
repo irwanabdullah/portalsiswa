@@ -4,781 +4,343 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Portal Siswa</title>
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.0/font/bootstrap-icons.css">
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
     <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
 
     <style>
-        body { background-color: #eef2f7; font-family: 'Segoe UI', sans-serif; }
-        .hidden { display: none !important; }
-        .login-card { border-radius: 15px; box-shadow: 0 8px 20px rgba(0,0,0,0.1); border: none; }
-        .header-bg { background: linear-gradient(135deg, #0d6efd, #0a58ca); color: white; padding: 20px 0; margin-bottom: 20px; box-shadow: 0 4px 6px rgba(0,0,0,0.1); }
-        .profile-img { width: 140px; height: 180px; object-fit: cover; border: 4px solid white; box-shadow: 0 4px 8px rgba(0,0,0,0.2); border-radius: 8px; }
+        body { font-family: 'Poppins', sans-serif; background-color: #f0f2f5; }
+        .bg-gradient-primary { background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); }
+        .card-login { border: none; border-radius: 20px; box-shadow: 0 10px 30px rgba(0,0,0,0.1); }
+        .form-control, .form-select { border-radius: 10px; padding: 12px; }
+        .btn-custom { border-radius: 10px; padding: 12px; font-weight: 600; transition: 0.3s; }
         
-        /* Style untuk area cetak PDF (Kertas A4 Look) */
-        #printable-area {
-            background: white; padding: 40px; border: 1px solid #ccc;
-            width: 100%; max-width: 800px; margin: 0 auto;
-            font-family: 'Times New Roman', serif; position: relative;
+        /* Foto Profil Placeholder Style */
+        .profile-img-container {
+            width: 150px; height: 190px;
+            background-color: #e2e8f0;
+            border-radius: 15px;
+            display: flex; flex-direction: column;
+            align-items: center; justify-content: center;
+            cursor: pointer;
+            border: 4px solid white;
+            box-shadow: 0 5px 15px rgba(0,0,0,0.1);
+            transition: transform 0.2s;
         }
-        .kop-surat { border-bottom: 3px double black; padding-bottom: 10px; margin-bottom: 20px; text-align: center; }
-        .status-lulus { font-size: 24px; font-weight: bold; padding: 10px; border: 2px solid #198754; color: #198754; display: inline-block; margin: 20px 0; border-radius: 8px; }
-        .status-gagal { font-size: 24px; font-weight: bold; padding: 10px; border: 2px solid #dc3545; color: #dc3545; display: inline-block; margin: 20px 0; border-radius: 8px; }
-    
-			footer {
-			font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-		}
-		footer hr {
-			width: 50%; /* Membuat garis pemisah tidak terlalu lebar agar elegan */
-			margin: 20px auto;
-			opacity: 0.2;
-		}
-		.text-muted {
-			font-size: 0.85rem;
-		}
-		
-		/* Pengaturan khusus untuk Mobile */
-		@media (max-width: 768px) {
-		.container {
-			padding-left: 10px;
-			padding-right: 10px;
-		}
-		
-		/* Membuat foto profil berada di tengah saat di HP */
-		.profile-section {
-			text-align: center;
-		}
-		
-		#img-preview {
-			width: 120px; /* Sedikit lebih kecil di HP agar tidak makan tempat */
-			margin-bottom: 15px;
-		}
-
-		/* Membuat tabel SKL bisa di-scroll ke samping jika kepanjangan */
-		.table-responsive-mobile {
-			display: block;
-			width: 100%;
-			overflow-x: auto;
-			-webkit-overflow-scrolling: touch;
-		}
-
-		/* Ukuran font tombol diperbesar agar mudah ditekan jari */
-		.btn {
-			width: 100%; /* Tombol jadi lebar penuh di HP */
-			margin-bottom: 10px;
-			padding: 12px;
-		}
-	}
-	
-	</style>
+        .profile-img-container:hover { transform: scale(1.02); border-color: #667eea; }
+        .profile-placeholder-icon { font-size: 4rem; color: #94a3b8; }
+        
+        #loader { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(255,255,255,0.9); z-index: 9999; display: none; align-items: center; justify-content: center; }
+    </style>
 </head>
 <body>
 
-<nav class="navbar navbar-dark bg-dark shadow-sm">
+<div id="loader"><div class="spinner-border text-primary" role="status"></div></div>
+
+<nav class="navbar navbar-expand-lg navbar-dark bg-gradient-primary shadow-sm sticky-top">
     <div class="container">
-        <span class="navbar-brand fw-bold"><i class="fas fa-graduation-cap me-2"></i>PORTAL SISWA</span>
-        <button id="btn-logout" onclick="location.reload()" class="btn btn-outline-danger btn-sm hidden fw-bold">KELUAR</button>
+        <span class="navbar-brand fw-bold"><i class="bi bi-mortarboard-fill me-2"></i>PORTAL SISWA</span>
+        <div class="d-flex align-items-center gap-2">
+            <button onclick="refreshData()" class="btn btn-light btn-sm fw-bold d-none" id="btn-refresh" title="Perbarui Data">
+                <i class="bi bi-arrow-repeat"></i> Refresh
+            </button>
+            <button onclick="logout()" class="btn btn-danger btn-sm fw-bold d-none" id="btn-logout">
+                <i class="bi bi-box-arrow-right"></i> Keluar
+            </button>
+        </div>
     </div>
 </nav>
 
-<div class="container pb-5">
-
-    <div id="login-section" class="row justify-content-center mt-5">
-        <div class="col-md-4">
-            <div class="card login-card p-4">
+<div class="container" id="login-section">
+    <div class="row justify-content-center align-items-center" style="min-height: 80vh;">
+        <div class="col-md-5">
+            <div class="card card-login p-4">
                 <div class="text-center mb-4">
-                    <i class="fas fa-user-circle fa-4x text-primary mb-3"></i>
+                    <div class="bg-light rounded-circle d-inline-flex p-3 mb-3"><i class="bi bi-person-bounding-box fs-1 text-primary"></i></div>
                     <h4 class="fw-bold">Login Siswa</h4>
-                    <p class="text-muted small">Gunakan NISN untuk Username & Password</p>
+                    <p class="text-muted small">Gunakan NISN sebagai Password</p>
                 </div>
-                <div class="mb-3">
-                    <label class="fw-bold small">Username</label>
-                    <input type="number" id="login-nisn" class="form-control" placeholder="Masukkan NISN">
-                </div>
+                <div class="mb-3"><input type="number" id="login-nisn" class="form-control bg-light border-0" placeholder="NISN"></div>
                 <div class="mb-4">
-				<label class="fw-bold small">Password</label>
-				<div class="input-group">
-					<input type="password" id="login-pass" class="form-control" placeholder="Masukkan NISN kembali">
-					<span class="input-group-text" onclick="togglePass('login-pass', 'icon-siswa')" style="cursor: pointer;">
-						<i class="fas fa-eye" id="icon-siswa"></i>
-					</span>
-				</div>
-			</div>
-                <button onclick="handleLogin()" class="btn btn-primary w-100 fw-bold py-2">LOGIN</button>
-
-				<div class="text-center mt-3">
-					<a href="#" onclick="toggleAdminLogin()" class="text-decoration-none small text-muted">
-						<i class="fas fa-user-shield me-1"></i> Login sebagai Admin
-					</a>
-				</div>
-
-				<div id="admin-login-form" class="hidden mt-3 pt-3 border-top">
-					<h5 class="text-center fw-bold mb-3">Login Administrator</h5>
-					<div class="mb-2">
-						<input type="text" id="admin-user" class="form-control" placeholder="Username Admin">
-					</div>
-					<div class="mb-3">
-					<div class="input-group">
-						<input type="password" id="admin-pass" class="form-control" placeholder="Password Admin">
-						<span class="input-group-text" onclick="togglePass('admin-pass', 'icon-admin')" style="cursor: pointer;">
-							<i class="fas fa-eye" id="icon-admin"></i>
-						</span>
-					</div>
-				</div>
-					<button onclick="handleAdminLogin()" class="btn btn-dark w-100 fw-bold">MASUK ADMIN</button>
-					<button onclick="toggleAdminLogin()" class="btn btn-link w-100 btn-sm text-secondary mt-1">Batal</button>
-				</div>
+                    <div class="input-group">
+                        <input type="password" id="login-pass" class="form-control bg-light border-0" placeholder="Password">
+                        <span class="input-group-text bg-light border-0" onclick="togglePass()" style="cursor: pointer;"><i class="bi bi-eye" id="eye-icon"></i></span>
+                    </div>
+                </div>
+                <button onclick="handleLogin()" class="btn btn-primary w-100 btn-custom bg-gradient-primary border-0 shadow">MASUK</button>
+                <div class="text-center mt-4"><a href="<?= ScriptApp.getService().getUrl() ?>?page=admin" class="text-decoration-none text-muted small"></a></div>
             </div>
         </div>
-	
     </div>
-	
+</div>
 
-    <div id="dashboard-section" class="hidden">
-        <div class="header-bg rounded mt-3 text-center">
-            <h3 id="head-nama" class="fw-bold mb-0">Nama Siswa</h3>
-            <p id="head-nisn" class="mb-0 opacity-75">NISN: -</p>
+<div class="container py-4 d-none" id="dashboard-section">
+    <div class="card border-0 shadow-sm rounded-4 overflow-hidden mb-4">
+        <div class="card-body p-4 bg-white d-flex flex-column flex-md-row align-items-center gap-4">
+            <div class="text-center">
+                <div class="profile-img-container" id="foto-container" onclick="bukaFotoAsli()" title="Klik untuk melihat foto asli">
+                    <i class="bi bi-person-circle profile-placeholder-icon"></i>
+                    <small class="fw-bold text-primary mt-2">Lihat Foto</small>
+                </div>
+                <div class="mt-2">
+                    <button onclick="document.getElementById('up-foto').click()" class="btn btn-sm btn-outline-primary rounded-pill px-3"><i class="bi bi-camera"></i> Ganti</button>
+                    <input type="file" id="up-foto" hidden accept="image/*" onchange="uploadFile('foto')">
+                </div>
+            </div>
+
+            <div class="text-center text-md-start flex-grow-1">
+                <h3 class="fw-bold mb-1" id="d-nama">Memuat...</h3>
+                <span class="badge bg-primary rounded-pill mb-2" id="d-nisn">...</span>
+                <p class="text-muted small mb-0"><i class="bi bi-geo-alt-fill text-danger"></i> <span id="d-alamat-singkat">-</span></p>
+            </div>
         </div>
+    </div>
 
-        <ul class="nav nav-tabs nav-fill mb-4 bg-white rounded shadow-sm" id="myTab" role="tablist">
-            <li class="nav-item" role="presentation">
-                <button class="nav-link active fw-bold py-3" id="biodata-tab" data-bs-toggle="tab" data-bs-target="#biodata" type="button"><i class="fas fa-id-card me-2"></i>UPDATE DATA PRIBADI</button>
-            </li>
-            <li class="nav-item" role="presentation">
-                <button class="nav-link fw-bold py-3" id="pengumuman-tab" data-bs-toggle="tab" data-bs-target="#" type="button"><i class="fas fa-scroll me-2"></i>PENGUMUMAN & SKL</button>
-            </li>
-        </ul>
-		
-		
-        <div class="tab-content" id="myTabContent">
+    <div class="card border-0 shadow-sm rounded-4 p-4">
+        <h5 class="fw-bold text-primary mb-4"><i class="bi bi-person-lines-fill me-2"></i>Data Pribadi & Kelas</h5>
+        <div class="row g-3">
+            <div class="col-md-6"><label class="small fw-bold text-muted">Nama Lengkap</label><input type="text" id="i-nama" class="form-control bg-light" disabled></div>
+            <div class="col-md-6"><label class="small fw-bold text-muted">TTL</label><input type="text" id="i-ttl" class="form-control bg-light" disabled></div>
             
-            <div class="tab-pane fade show active" id="biodata" role="tabpanel">
-                <div class="row g-4">
-                    <div class="col-lg-4">
-                        <div class="card border-0 shadow-sm p-3 text-center h-100">
-                            <h6 class="fw-bold text-muted mb-3">FOTO PROFIL</h6>
-                            <img id="img-preview" src="" crossorigin="anonymous" class="img-thumbnail" style="width: 150px; height: 200px; object-fit: cover;">
-                            <input type="file" id="up-foto" hidden accept="image/*" onchange="processUpload('foto')">
-                            <button onclick="document.getElementById('up-foto').click()" class="btn btn-outline-primary w-100 btn-sm mb-2"><i class="fas fa-camera me-1"></i> Ganti Foto (JPG)</button>
+            <div class="col-md-6">
+                <label class="small fw-bold text-dark">Kelas Saat Ini <span class="text-danger">*</span></label>
+                <select id="i-kelas" class="form-select border-primary">
+                    <option value="">- Pilih Kelas -</option>
+                </select>
+            </div>
+
+            <div class="col-md-6"><label class="small fw-bold text-dark">No. WhatsApp</label><input type="number" id="i-hp" class="form-control border-primary" placeholder="08xxx"></div>
+            <div class="col-12"><label class="small fw-bold text-dark">Alamat</label><textarea id="i-alamat" class="form-control" rows="2"></textarea></div>
+            
+            <div class="col-md-3 col-6"><label class="small text-muted">Saudara (org)</label><input type="number" id="i-saudara" class="form-control"></div>
+            <div class="col-md-3 col-6"><label class="small text-muted">Tinggi (cm)</label><input type="number" id="i-tinggi" class="form-control"></div>
+            <div class="col-md-3 col-6"><label class="small text-muted">Berat (kg)</label><input type="number" id="i-berat" class="form-control"></div>
+            <div class="col-md-3 col-6"><label class="small text-muted">Lingkar Kpl (cm)</label><input type="number" id="i-lingkar" class="form-control"></div>
+
+            <div class="col-12 mt-4">
+                <h6 class="fw-bold border-bottom pb-2 mb-3 text-secondary">Dokumen</h6>
+                <div class="row g-3">
+                    <div class="col-md-6">
+                        <div class="card bg-light border-0 p-3 h-100">
+                            <label class="small fw-bold mb-2">Kartu Keluarga (KK)</label>
+                            <div class="input-group">
+                                <button class="btn btn-secondary" onclick="document.getElementById('up-kk').click()">Upload</button>
+                                <input type="text" id="status-kk" class="form-control bg-white" placeholder="Kosong" readonly>
+                                <a id="btn-view-kk" href="#" target="_blank" class="btn btn-primary disabled">Lihat</a>
+                            </div>
+                            <input type="file" id="up-kk" hidden onchange="uploadFile('kk')">
                         </div>
                     </div>
-                    <div class="col-lg-8">
-                        <div class="card border-0 shadow-sm p-4 h-100">
-                            <h5 class="fw-bold border-bottom pb-2 mb-3">Formulir Data Diri</h5>
-                            <div class="row g-3">
-                                <div class="col-12 col-md-6">
-                                    <label class="small fw-bold">Nama Lengkap (Terkunci)</label>
-                                    <input id="i-nama" class="form-control bg-light" disabled>
-                                </div>
-                                <div class="col-md-6">
-                                    <label class="small fw-bold">NIK (Terkunci)</label>
-                                    <input id="i-nik" class="form-control bg-light" disabled>
-                                </div>
-                                <div class="col-md-6">
-                                    <label class="small fw-bold">Tempat, Tgl Lahir (Terkunci)</label>
-                                    <input id="i-ttl" class="form-control bg-light" disabled>
-                                </div>
-                                <div class="col-md-6">
-                                    <label class="small fw-bold">Nomor HP/WA <span class="text-danger">*</span></label>
-                                    <input id="i-hp" class="form-control" placeholder="08xxx">
-                                </div>
-                                <div class="col-12">
-                                    <label class="small fw-bold">Alamat Domisili <span class="text-danger">*</span></label>
-                                    <textarea id="i-alamat" class="form-control" rows="2"></textarea>
-                                </div>
-                                <div class="col-6 col-md-3">
-                                    <label class="small">Jml Saudara</label>
-                                    <input id="i-saudara" type="number" class="form-control">
-                                </div>
-                                <div class="col-6 col-md-3">
-									<label class="small">Tinggi (cm)</label>
-									<input id="i-tinggi" type="number" class="form-control">
-								</div>
-								<div class="col-6 col-md-3">
-									<label class="small">Berat (kg)</label>
-									<input id="i-berat" type="number" class="form-control">
-								</div>
-								<div class="col-6 col-md-3">
-									<label class="small">Lingkar Kepala (cm)</label>
-									<input id="i-lingkar" type="number" class="form-control">
-								</div>
-                                </div>
-                                <div class="col-12 mt-3">
-                                    <label class="small fw-bold">Upload Kartu Keluarga (KK)</label>
-                                    <div class="input-group">
-                                        <input id="i-kk-link" class="form-control bg-light" readonly placeholder="Belum ada file">
-                                        <input type="file" id="up-kk" hidden accept="image/*,application/pdf" onchange="processUpload('kk')">
-                                        <button class="btn btn-secondary" onclick="document.getElementById('up-kk').click()"><i class="fas fa-upload"></i> Upload</button>
-                                    </div>
-                                </div>
-								<div class="col-12 mt-3">
-									<label class="small fw-bold">Upload Ijazah SD</label>
-									<div class="input-group">
-										<input id="i-ijazah-link" class="form-control bg-light" readonly placeholder="Belum ada file">
-										<input type="file" id="up-ijazah" hidden accept="image/*,application/pdf" onchange="processUpload('ijazah')">
-										<button class="btn btn-secondary" onclick="document.getElementById('up-ijazah').click()"><i class="fas fa-upload"></i> Upload</button>
-									</div>
-								</div>
-                                <div class="col-12 mt-4">
-                                    <button onclick="saveData()" class="btn btn-success w-100 fw-bold py-2"><i class="fas fa-save me-2"></i> SIMPAN PERUBAHAN</button>
-                                </div>
+                    <div class="col-md-6">
+                        <div class="card bg-light border-0 p-3 h-100">
+                            <label class="small fw-bold mb-2">Ijazah</label>
+                            <div class="input-group">
+                                <button class="btn btn-secondary" onclick="document.getElementById('up-ijazah').click()">Upload</button>
+                                <input type="text" id="status-ijazah" class="form-control bg-white" placeholder="Kosong" readonly>
+                                <a id="btn-view-ijazah" href="#" target="_blank" class="btn btn-primary disabled">Lihat</a>
                             </div>
+                            <input type="file" id="up-ijazah" hidden onchange="uploadFile('ijazah')">
                         </div>
                     </div>
                 </div>
             </div>
-
-            <div class="tab-pane fade" id="pengumuman" role="tabpanel">
-                <div class="row justify-content-center">
-                    <div class="col-lg-10">
-                        <div class="card border-0 shadow-sm p-4">
-                            <div class="d-flex justify-content-between align-items-center mb-3">
-                                <h5 class="fw-bold text-primary">Hasil Kelulusan</h5>
-                                <button onclick="downloadPDF()" class="btn btn-danger fw-bold"><i class="fas fa-file-pdf me-2"></i> DOWNLOAD SKL</button>
-                            </div>
-                            
-                            <div id="printable-area" class="shadow-sm">
-                                <div class="kop-surat">
-                                    <h4 class="fw-bold mb-0">UPT SPF SMP NEGERI 13 MAKASSAR</h4>
-                                    <p class="mb-0 small">Jl. Tamalate VI No. 2, Perumnas, Makassar</p>
-                                    <p class="mb-0 small">Telp: 0819-9979-3085 | Website: https://smpn13makassar.my.id</p>
-                                </div>
-                                
-                                <div class="text-center mb-4">
-                                    <h5 class="fw-bold text-decoration-underline">SURAT KETERANGAN KELULUSAN</h5>
-                                    <p>Nomor: 800/..../421/SKL/V/2026</p>
-                                </div>
-
-                                <p>Yang bertanda tangan di bawah ini Kepala Sekolah UPT SPF SMPN 13 Makassar, menerangkan bahwa:</p>
-                                
-                                <table class="table table-borderless table-sm w-75 mx-auto">
-                                    <tr><td width="30%">Nama Lengkap</td><td width="5%">:</td><td class="fw-bold" id="sk-nama">Loading...</td></tr>
-                                    <tr><td>NISN</td><td>:</td><td id="sk-nisn">Loading...</td></tr>
-                                    <tr><td>Tempat, Tgl Lahir</td><td>:</td><td id="sk-ttl">Loading...</td></tr>
-                                    <tr><td>Nilai Rata-rata</td><td>:</td><td id="sk-nilai">Loading...</td></tr>
-                                </table>
-
-                                <div class="text-center mt-3">
-                                    <p class="mb-1">Dinyatakan:</p>
-                                    <div id="sk-status-badge">Memuat Data...</div>
-                                    <p class="mt-2">Demikian surat keterangan ini dibuat untuk dapat dipergunakan sebagaimana mestinya.</p>
-                                </div>
-
-                                <div class="row mt-5">
-                                    <div class="col-6 offset-6 text-center">
-                                        <p>Makassar, 20 Mei 2026<br>Kepala Sekolah,</p>
-                                        <br><br>ttd<br>
-                                        <p class="fw-bold text-decoration-underline">Drs. Ramli, M.Pd</p>
-                                        <p>NIP. 1966xxxx</p>
-                                    </div>
-                                </div>
-                            </div>
-                            </div>
-                    </div>
-                </div>
-            </div>
-
+            <div class="col-12 mt-4"><button onclick="saveData()" class="btn btn-success w-100 py-3 fw-bold shadow btn-custom">SIMPAN DATA</button></div>
         </div>
     </div>
 </div>
-
-<div id="admin-section" class="hidden">
-    <div class="header-bg rounded mt-3 p-4 d-flex justify-content-between align-items-center">
-        <div>
-            <h3 class="fw-bold mb-0"><i class="fas fa-tachometer-alt me-2"></i>Dashboard Admin</h3>
-            <p class="mb-0 opacity-75">Pantau Data Siswa & Kelulusan</p>
-        </div>
-        <div class="bg-white text-primary rounded p-2 px-4 shadow-sm">
-            <h2 class="fw-bold mb-0 text-center" id="total-siswa">0</h2>
-            <small class="fw-bold">Total Siswa</small>
-        </div>
-    </div>
-
-    <div class="row g-3 mt-2 mb-4">
-        <div class="col-md-6">
-            <div class="card p-3 border-0 shadow-sm border-start border-5 border-success">
-                <div class="d-flex justify-content-between">
-                    <div>
-                        <h6 class="text-muted text-uppercase mb-1">Sudah Update Data</h6>
-                        <h3 class="fw-bold text-success mb-0" id="stat-sudah">0</h3>
-                    </div>
-                    <i class="fas fa-check-circle fa-2x text-success opacity-25"></i>
-                </div>
-            </div>
-        </div>
-        <div class="col-md-6">
-            <div class="card p-3 border-0 shadow-sm border-start border-5 border-danger">
-                <div class="d-flex justify-content-between">
-                    <div>
-                        <h6 class="text-muted text-uppercase mb-1">Belum Update</h6>
-                        <h3 class="fw-bold text-danger mb-0" id="stat-belum">0</h3>
-                    </div>
-                    <i class="fas fa-times-circle fa-2x text-danger opacity-25"></i>
-                </div>
-            </div>
-        </div>
-    </div>
-
-    <div class="card border-0 shadow-sm p-4">
-        <div class="d-flex justify-content-between align-items-center mb-3">
-            <h5 class="fw-bold">Data Semua Siswa</h5>
-            <input type="text" id="search-input" onkeyup="searchTable()" class="form-control w-25" placeholder="Cari Nama/NISN...">
-        </div>
-        <div class="table-responsive">
-            <table class="table table-hover table-bordered align-middle" id="admin-table">
-                <thead class="table-light">
-                    <tr>
-                        <th>NISN</th>
-                        <th>Nama Lengkap</th>
-                        <th>No. HP</th>
-                        <th>Alamat</th>
-                        <th>Status Update</th>
-                        <th>Foto</th>
-                    </tr>
-                </thead>
-                <tbody id="table-body">
-                    <tr><td colspan="6" class="text-center p-3">Memuat data...</td></tr>
-                </tbody>
-            </table>
-        </div>
-    </div>
-</div>
-
-<footer class="mt-5 mb-4">
-    <hr>
-    <div class="text-center text-muted">
-        <p class="mb-0">&copy; <span id="current-year"></span> SMPN 13 MAKASSAR</p>
-        <small>Sistem Informasi - All Rights Reserved</small>
-    </div>
-</footer>
 
 <script>
-    const SCRIPT_URL = "https://script.google.com/macros/s/AKfycbx2f8YAFr-J_e9NC7g1qLQueWAylOVUOFpUGgbFEj_Il0mHw-xs0O6fhAXm09b6yZMQzQ/exec"; // <--- PASTE URL WEB APP DISINI
-    let currentData = {};
-	
-			// Menampilkan tahun berjalan secara dinamis
-		document.getElementById('current-year').textContent = new Date().getFullYear();
+    const SCRIPT_URL = "https://script.google.com/macros/s/AKfycbyU8OG2nqzagT0Vv4xAkVvg41FQ3FM26uSJpBLB8vosRCq0oSjWjup2DVxkKKR6_YpJfw/exec";
+    let currentUser = {};
 
-		// Jalankan ini saat login sukses
-		function onLoginSuccess(response) {
-			localStorage.setItem('nisn_login', response.data.nisn); // Simpan NISN di browser
-			currentData = response;
-			renderDashboard(response.data, response.pengumuman);
-			// Pindah ke dashboard...
-		}
+    // Generate Daftar Kelas (7A-7K, dst) - Optimasi Frontend
+    (function generateClasses() {
+        const select = document.getElementById('i-kelas');
+        const levels = [7, 8, 9];
+        const letters = ['A', 'B', 'C', 'D', 'E', 'F', 'G', 'H', 'I', 'J', 'K'];
+        
+        levels.forEach(lvl => {
+            letters.forEach(char => {
+                let opt = document.createElement('option');
+                opt.value = `${lvl}${char}`;
+                opt.innerText = `${lvl}${char}`;
+                select.appendChild(opt);
+            });
+        });
+    })();
 
-		// Jalankan ini otomatis saat halaman pertama kali dibuka (Auto-Login)
-		window.onload = function() {
-			const savedNISN = localStorage.getItem('nisn_login');
-			if (savedNISN) {
-				// Langsung panggil fungsi login otomatis jika ada NISN tersimpan
-				doLogin(savedNISN); 
-			}
-			
-			// Set tahun footer
-			document.getElementById('current-year').textContent = new Date().getFullYear();
-		};
+    function toggleLoader(s) { document.getElementById('loader').style.display = s ? 'flex' : 'none'; }
+    function togglePass() {
+        const x = document.getElementById("login-pass");
+        x.type = x.type === "password" ? "text" : "password";
+    }
 
+    // Fungsi Klik Foto Placeholder
+    function bukaFotoAsli() {
+        if (currentUser.foto && currentUser.foto.length > 5) {
+            window.open(currentUser.foto, '_blank');
+        } else {
+            Swal.fire('Info', 'Foto profil belum diupload.', 'info');
+        }
+    }
 
-    // --- LOGIC LOGIN ---
     async function handleLogin() {
         const u = document.getElementById('login-nisn').value;
         const p = document.getElementById('login-pass').value;
+        if(!u || !p) return Swal.fire('Oops', 'Isi NISN dan Password', 'warning');
 
-        if(!u || !p) return Swal.fire('Error', 'Harap isi NISN dan Password', 'warning');
-
-        // Validasi Frontend: User & Pass harus sama
-        if(u !== p) return Swal.fire('Gagal', 'Password harus sama dengan NISN!', 'error');
-
-        loading(true, 'Sedang memproses...');
-        
+        toggleLoader(true);
         try {
-            const response = await fetch(SCRIPT_URL, {
-                method: "POST",
-                body: JSON.stringify({ action: "login", nisn: u, password: p })
-            });
-            const res = await response.json();
-            loading(false);
-
+            const res = await fetch(SCRIPT_URL, { method: "POST", body: JSON.stringify({ action: "login", nisn: u, password: p }) }).then(r => r.json());
             if(res.status === "success") {
-                currentData = res; // Simpan data di memori
-                renderDashboard(res.data, res.pengumuman);
-                document.getElementById('login-section').classList.add('hidden');
-                document.getElementById('dashboard-section').classList.remove('hidden');
-                document.getElementById('btn-logout').classList.remove('hidden');
+                currentUser = res.data;
+                renderDashboard(currentUser);
+                document.getElementById('login-section').classList.add('d-none');
+                document.getElementById('dashboard-section').classList.remove('d-none');
+                document.getElementById('btn-refresh').classList.remove('d-none');
+                document.getElementById('btn-logout').classList.remove('d-none');
             } else {
-                Swal.fire('Login Gagal', res.msg, 'error');
+                Swal.fire('Gagal', res.msg, 'error');
             }
-        } catch(e) {
-            loading(false);
-            Swal.fire('Error', 'Gagal terhubung ke server', 'error');
-        }
+        } catch(e) { Swal.fire('Error', 'Koneksi bermasalah', 'error'); }
+        toggleLoader(false);
     }
-	
-	// --- FUNGSI TOGGLE PASSWORD (MATA) ---
-	function togglePass(inputId, iconId) {
-		const input = document.getElementById(inputId);
-		const icon = document.getElementById(iconId);
 
-		if (input.type === "password") {
-			input.type = "text"; // Ubah jadi teks biasa agar terlihat
-			icon.classList.remove("fa-eye");
-			icon.classList.add("fa-eye-slash"); // Ganti ikon jadi mata dicoret
-		} else {
-			input.type = "password"; // Kembalikan jadi titik-titik
-			icon.classList.remove("fa-eye-slash");
-			icon.classList.add("fa-eye"); // Kembalikan ikon mata biasa
-		}
-	}
-
-    // --- RENDER DATA KE HTML ---
-    function renderDashboard(p, l) {
-	const imgElement = document.getElementById('img-preview');
-    
-    if (p.foto && p.foto !== "") {
-        // Kita ambil ID-nya saja dari link Drive Anda
-        let fileId = "";
-        const match = p.foto.match(/id=([\w-]+)|d\/([\w-]+)/);
-        if (match) fileId = match[1] || match[2];
-
-        if (fileId) {
-            // Gunakan format link googleusercontent (lebih ramah browser)
-            imgElement.src = "https://lh3.googleusercontent.com/d/" + fileId;
-        } else {
-            imgElement.src = p.foto; // fallback jika format link beda
-        }
-    } else {
-        // Gunakan link lengkap (dengan https://) agar tidak error NAME_NOT_RESOLVED
-        imgElement.src = 'https://placehold.co/150x200?text=Foto+Kosong';
+    async function refreshData() {
+        if(!currentUser.nisn) return;
+        toggleLoader(true);
+        try {
+            const res = await fetch(SCRIPT_URL, { method: "POST", body: JSON.stringify({ action: "refreshData", nisn: currentUser.nisn, password: currentUser.nisn }) }).then(r => r.json());
+            if(res.status === "success") {
+                currentUser = res.data;
+                renderDashboard(currentUser);
+                Swal.mixin({toast: true, position: 'top-end', showConfirmButton: false, timer: 1500}).fire({icon: 'success', title: 'Data Terupdate'});
+            }
+        } catch(e) {}
+        toggleLoader(false);
     }
-	
-	// Perbaiki bagian ini di dalam script index.html
-		document.getElementById('img-preview').onerror = function() {
-			// Gunakan https:// agar browser tahu ini alamat web luar
-			if (!this.src.includes('placehold.co')) { 
-				this.src = 'https://placehold.co/150x200?text=Gagal+Load';
-			}
-			console.error("Link Drive ditolak atau tidak valid.");
-		};
-	
-        // 1. Update Header & Tab Biodata (Tetap seperti sebelumnya)
-        document.getElementById('head-nama').innerText = p.nama;
-        document.getElementById('head-nisn').innerText = "NISN: " + p.nisn;
-		
-    // Masukkan data ke input form agar tidak kosong saat di-reload
-        document.getElementById('i-nama').value = p.nama;
-        document.getElementById('i-nik').value = p.nik;
-        document.getElementById('i-ttl').value = p.tmpLahir + ", " + p.tglLahir;
-        document.getElementById('i-hp').value = p.hp;
-        document.getElementById('i-alamat').value = p.alamat;
-        document.getElementById('i-saudara').value = p.saudara;
-        document.getElementById('i-tinggi').value = p.tinggi;
-        document.getElementById('i-berat').value = p.berat;
-		document.getElementById('i-lingkar').value = p.lingkar;
-        document.getElementById('i-kk-link').value = p.kk || "";
-		document.getElementById('i-ijazah-link').value = p.ijazah || "";
 
-        // 2. Update Data di dalam Surat (SKL)
-        document.getElementById('sk-nama').innerText = p.nama;
-        document.getElementById('sk-nisn').innerText = p.nisn;
-        document.getElementById('sk-ttl').innerText = p.tmpLahir + ", " + p.tglLahir;
-        document.getElementById('sk-nilai').innerText = l.nilai; // Mengambil nilai dari Sheet Pengumuman Kolom F
+    function renderDashboard(data) {
+        document.getElementById('d-nama').innerText = data.nama;
+        document.getElementById('d-nisn').innerText = "NISN: " + data.nisn;
+        document.getElementById('d-alamat-singkat').innerText = data.alamat || "-";
         
-        // 3. Update Badge Status Lulus
-        const badge = document.getElementById('sk-status-badge');
-        const statusSiswa = l.status.trim().toUpperCase();
-
-        if(statusSiswa === "LULUS") {
-            badge.innerText = "L U L U S";
-            badge.className = "status-lulus"; // Hijau
-        } else if (statusSiswa === "TIDAK LULUS") {
-            badge.innerText = "TIDAK LULUS";
-            badge.className = "status-gagal"; // Merah
+        // Ubah warna ikon placeholder jika foto ada
+        const icon = document.querySelector('.profile-placeholder-icon');
+        const text = document.querySelector('.profile-img-container small');
+        if(data.foto && data.foto.length > 5) {
+            icon.className = "bi bi-check-circle-fill profile-placeholder-icon text-success";
+            text.innerText = "Buka Foto";
         } else {
-            badge.innerText = "BELUM TERSEDIA";
-            badge.style.color = "orange";
-            badge.style.border = "2px solid orange";
-            badge.style.padding = "10px";
-            badge.style.display = "inline-block";
+            icon.className = "bi bi-person-circle profile-placeholder-icon";
+            text.innerText = "Belum Ada";
+        }
+
+        document.getElementById('i-nama').value = data.nama;
+        document.getElementById('i-ttl').value = (data.tmpLahir || "") + ", " + (data.tglLahir || "");
+        document.getElementById('i-kelas').value = data.kelas || ""; 
+        document.getElementById('i-hp').value = data.hp || "";
+        document.getElementById('i-alamat').value = data.alamat || "";
+        document.getElementById('i-saudara').value = data.saudara || "";
+        document.getElementById('i-tinggi').value = data.tinggi || "";
+        document.getElementById('i-berat').value = data.berat || "";
+        document.getElementById('i-lingkar').value = data.lingkar || "";
+
+        updateFileStatus('kk', data.kk);
+        updateFileStatus('ijazah', data.ijazah);
+    }
+
+    function updateFileStatus(type, url) {
+        const statusEl = document.getElementById('status-' + type);
+        const btnEl = document.getElementById('btn-view-' + type);
+        if(url && url.length > 5) {
+            statusEl.value = "Tersedia (Klik Lihat)";
+            statusEl.classList.add("text-success", "fw-bold");
+            btnEl.href = url;
+            btnEl.classList.remove('disabled');
+        } else {
+            statusEl.value = "Kosong";
+            statusEl.classList.remove("text-success", "fw-bold");
+            btnEl.classList.add('disabled');
         }
     }
 
-    // --- UPDATE DATA ---
     async function saveData() {
         const form = {
+            kelas: document.getElementById('i-kelas').value, 
             hp: document.getElementById('i-hp').value,
             alamat: document.getElementById('i-alamat').value,
             saudara: document.getElementById('i-saudara').value,
             tinggi: document.getElementById('i-tinggi').value,
             berat: document.getElementById('i-berat').value,
-            lingkar: document.getElementById('i-lingkar').value // Jika ada input lingkar, tambahkan
+            lingkar: document.getElementById('i-lingkar').value
         };
-
-        loading(true, 'Menyimpan data...');
-        const res = await apiCall({ action: "updateData", nisn: currentData.data.nisn, form: form });
-        loading(false);
-        if(res.status === "success") Swal.fire('Berhasil', 'Data berhasil diperbarui', 'success');
-        else Swal.fire('Gagal', 'Terjadi kesalahan', 'error');
+        if(!form.kelas) return Swal.fire('Peringatan', 'Pilih kelas dulu!', 'warning');
+        toggleLoader(true);
+        const res = await fetch(SCRIPT_URL, { method: "POST", body: JSON.stringify({ action: "updateData", nisn: currentUser.nisn, form: form }) }).then(r => r.json());
+        toggleLoader(false);
+        if(res.status === "success") { Swal.fire('Berhasil', 'Data disimpan', 'success'); refreshData(); }
+        else Swal.fire('Gagal', 'Error sistem', 'error');
     }
 
-    // --- UPLOAD FILE (Versi Lengkap: Foto, KK, Ijazah) ---
-	function processUpload(tipe) {
-		// 1. Ambil ID element secara dinamis
-		// Pola ID di HTML Anda: 'up-foto', 'up-kk', 'up-ijazah'
-		const fileInput = document.getElementById('up-' + tipe);
-		
-		// Safety check jika elemen tidak ditemukan
-		if (!fileInput) return; 
-
-		const file = fileInput.files[0];
-		if(!file) return;
-
-		// Validasi ukuran (Max 2MB)
-		if(file.size > 2 * 1024 * 1024) {
-			Swal.fire('Terlalu Besar', 'Maksimal ukuran file 2MB', 'warning');
-			return;
-		}
-
-		const reader = new FileReader();
-		reader.readAsDataURL(file);
-		
-		reader.onload = async (e) => {
-			const base64Data = e.target.result;
-
-			// 2. EFEK INSTANT: Feedback visual sebelum upload selesai
-			if(tipe === 'foto') {
-				document.getElementById('img-preview').src = base64Data;
-			} else if (tipe === 'kk') {
-				document.getElementById('i-kk-link').value = "Sedang mengupload...";
-			} else if (tipe === 'ijazah') {
-				document.getElementById('i-ijazah-link').value = "Sedang mengupload...";
-			}
-
-			// 3. PROSES UPLOAD KE SERVER
-			Swal.fire({
-				title: 'Mengupload...',
-				text: 'Mohon tunggu sebentar',
-				allowOutsideClick: false,
-				didOpen: () => Swal.showLoading()
-			});
-
-			try {
-				const res = await apiCall({
-					action: "uploadFile",
-					base64: base64Data,
-					// Format nama file: TIPE_NISN_NAMASLI
-					filename: tipe.toUpperCase() + "_" + currentData.data.nisn + "_" + file.name,
-					nisn: currentData.data.nisn,
-					tipe: tipe // mengirim 'foto', 'kk', atau 'ijazah'
-				});
-
-				if(res.status === "success") {
-					Swal.fire('Sukses', 'File berhasil disimpan!', 'success');
-					
-					// 4. UPDATE TAMPILAN SETELAH SUKSES
-					// Mengisi kolom input dengan URL file dari Google Drive yang dikembalikan server
-					if(tipe === 'kk') {
-						document.getElementById('i-kk-link').value = res.url;
-					} else if (tipe === 'ijazah') {
-						document.getElementById('i-ijazah-link').value = res.url;
-					}
-
-					// Update data lokal (agar tidak perlu login ulang untuk melihat perubahan)
-					if (currentData && currentData.data) {
-						currentData.data[tipe] = res.url;
-					}
-
-				} else {
-					Swal.fire('Gagal', res.msg, 'error');
-					// Reset tulisan "Sedang mengupload..." jika gagal
-					if (tipe === 'kk') document.getElementById('i-kk-link').value = currentData.data.kk || "";
-					if (tipe === 'ijazah') document.getElementById('i-ijazah-link').value = currentData.data.ijazah || "";
-				}
-			} catch (err) {
-				console.error(err);
-				Swal.fire('Error', 'Gagal koneksi server', 'error');
-			}
-		};
-	}
-    // --- DOWNLOAD PDF ---
-    function downloadPDF() {
-        const { jsPDF } = window.jspdf;
-        const element = document.getElementById('printable-area');
-
-        // Scroll ke atas agar capture rapi
-        window.scrollTo(0,0);
-        loading(true, 'Membuat PDF...');
-
-        html2canvas(element, { scale: 2 }).then(canvas => {
-            const imgData = canvas.toDataURL('image/png');
-            const pdf = new jsPDF('p', 'mm', 'a4');
-            const imgWidth = 210; 
-            const imgHeight = canvas.height * imgWidth / canvas.width;
-            
-            pdf.addImage(imgData, 'PNG', 0, 0, imgWidth, imgHeight);
-            pdf.save(`SKL_${currentData.data.nisn}.pdf`);
-            loading(false);
-        });
+    function uploadFile(tipe) {
+        const file = document.getElementById('up-' + tipe).files[0];
+        if(!file) return;
+        toggleLoader(true);
+        const reader = new FileReader();
+        reader.readAsDataURL(file);
+        reader.onload = async () => {
+            const res = await fetch(SCRIPT_URL, { 
+                method: 'POST', body: JSON.stringify({ action: 'uploadFile', base64: reader.result, filename: tipe.toUpperCase() + "_" + currentUser.nisn + "_" + file.name, nisn: currentUser.nisn, tipe: tipe }) 
+            }).then(r => r.json());
+            toggleLoader(false);
+            if(res.status === 'success') { Swal.fire('Sukses', 'File terupload', 'success'); refreshData(); }
+            else Swal.fire('Gagal', res.msg, 'error');
+        };
     }
 
-    // --- UTILS ---
-    async function apiCall(body) {
-        const r = await fetch(SCRIPT_URL, { method: "POST", body: JSON.stringify(body) });
-        return await r.json();
-    }
-    function loading(show, msg) {
-        if(show) Swal.fire({ title: msg, allowOutsideClick: false, didOpen: () => Swal.showLoading() });
-        else Swal.close();
-    }
-	
-	// --- LOGIKA ADMIN ---
-
-	// 1. Toggle Form Login (Siswa <-> Admin)
-	function toggleAdminLogin() {
-		const siswaForm = document.querySelector('.login-card > div:not(#admin-login-form)');
-		const adminForm = document.getElementById('admin-login-form');
-		
-		// Check if hidden
-		if(adminForm.classList.contains('hidden')) {
-			adminForm.classList.remove('hidden');
-			// Sembunyikan input siswa agar bersih
-			document.getElementById('login-nisn').parentElement.classList.add('hidden');
-			document.getElementById('login-pass').parentElement.classList.add('hidden');
-			document.querySelector('button[onclick="handleLogin()"]').classList.add('hidden');
-		} else {
-			adminForm.classList.add('hidden');
-			// Munculkan kembali input siswa
-			document.getElementById('login-nisn').parentElement.classList.remove('hidden');
-			document.getElementById('login-pass').parentElement.classList.remove('hidden');
-			document.querySelector('button[onclick="handleLogin()"]').classList.remove('hidden');
-		}
-	}
-
-	// 2. Handle Login Admin
-	async function handleAdminLogin() {
-		const u = document.getElementById('admin-user').value;
-		const p = document.getElementById('admin-pass').value;
-
-		if(!u || !p) return Swal.fire('Error', 'Isi username dan password!', 'warning');
-
-		loading(true, 'Verifikasi Admin...');
-		
-		// Panggil Backend (Action: adminLogin)
-		const res = await apiCall({ action: "adminLogin", username: u, password: p });
-		
-		if(res.status === "success") {
-			// Ambil Data Dashboard
-			loadAdminData();
-		} else {
-			loading(false);
-			Swal.fire('Gagal', res.msg, 'error');
-		}
-	}
-
-	// 3. Load Data Dashboard
-	async function loadAdminData() {
-		loading(true, 'Mengambil Data Siswa...');
-		const res = await apiCall({ action: "getAdminData" }); // Sesuai code.gs baris 7
-		loading(false);
-
-		if(res.status === "success") {
-			// Ganti Tampilan ke Admin Section
-			document.getElementById('login-section').classList.add('hidden');
-			document.getElementById('admin-section').classList.remove('hidden');
-			document.getElementById('btn-logout').classList.remove('hidden');
-
-			// Render Statistik
-			document.getElementById('total-siswa').innerText = res.students.length;
-			document.getElementById('stat-sudah').innerText = res.stats.sudah;
-			document.getElementById('stat-belum').innerText = res.stats.belum;
-
-			// Render Tabel
-			renderTable(res.students);
-		} else {
-			Swal.fire('Error', res.msg, 'error');
-		}
-	}
-
-	// 4. Render Tabel HTML
-	function renderTable(data) {
-		const tbody = document.getElementById('table-body');
-		tbody.innerHTML = ''; // Kosongkan dulu
-
-		if(data.length === 0) {
-			tbody.innerHTML = '<tr><td colspan="6" class="text-center">Belum ada data siswa</td></tr>';
-			return;
-		}
-
-		data.forEach(siswa => {
-			let badgeClass = siswa.statusUpdate === 'SUDAH' ? 'bg-success' : 'bg-danger';
-			
-			// Cek Foto (Link atau Kosong)
-			let linkFoto = siswa.foto && siswa.foto.length > 5 
-				? `<a href="${siswa.foto}" target="_blank" class="btn btn-sm btn-outline-primary"><i class="fas fa-image"></i> Lihat</a>` 
-				: `<span class="text-muted">-</span>`;
-
-			let row = `
-				<tr>
-					<td class="fw-bold">${siswa.nisn}</td>
-					<td>${siswa.nama}</td>
-					<td>${siswa.hp}</td>
-					<td><small>${siswa.alamat}</small></td>
-					<td><span class="badge ${badgeClass}">${siswa.statusUpdate}</span></td>
-					<td>${linkFoto}</td>
-				</tr>
-			`;
-			tbody.innerHTML += row;
-		});
-	}
-
-	// 5. Fitur Pencarian Sederhana
-	function searchTable() {
-		const input = document.getElementById('search-input');
-		const filter = input.value.toUpperCase();
-		const table = document.getElementById('admin-table');
-		const tr = table.getElementsByTagName('tr');
-
-		for (let i = 1; i < tr.length; i++) {
-			let tdNama = tr[i].getElementsByTagName("td")[1]; // Kolom Nama
-			let tdNisn = tr[i].getElementsByTagName("td")[0]; // Kolom NISN
-			if (tdNama || tdNisn) {
-				let txtValue = (tdNama.textContent || tdNama.innerText) + (tdNisn.textContent || tdNisn.innerText);
-				if (txtValue.toUpperCase().indexOf(filter) > -1) {
-					tr[i].style.display = "";
-				} else {
-					tr[i].style.display = "none";
-				}
-			}
-		}
-	}
-	
+    function logout() { currentUser = {}; location.reload(); }
 </script>
 
-<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
 
 <script>
-  // 1. Matikan Klik Kanan
-  document.addEventListener('contextmenu', event => event.preventDefault());
+// Disable klik kanan
+document.addEventListener('contextmenu', function (e) {
+    e.preventDefault();
+});
 
-  // 2. Matikan Shortcut Keyboard
-  document.onkeydown = function (e) {
+// Disable shortcut keyboard tertentu
+document.addEventListener('keydown', function (e) {
+
     // F12
-    if (e.keyCode == 123) return false;
-    
-    // Ctrl+Shift+I (Inspect)
-    if (e.ctrlKey && e.shiftKey && e.keyCode == 'I'.charCodeAt(0)) return false;
-    
-    // Ctrl+Shift+J (Console)
-    if (e.ctrlKey && e.shiftKey && e.keyCode == 'J'.charCodeAt(0)) return false;
-    
+    if (e.key === "F12") {
+        e.preventDefault();
+    }
+
+    // Ctrl+Shift+I
+    if (e.ctrlKey && e.shiftKey && e.key === 'I') {
+        e.preventDefault();
+    }
+
+    // Ctrl+Shift+J
+    if (e.ctrlKey && e.shiftKey && e.key === 'J') {
+        e.preventDefault();
+    }
+
     // Ctrl+U (View Source)
-    if (e.ctrlKey && e.keyCode == 'U'.charCodeAt(0)) return false;
-    
-    // Ctrl+S (Save Page - Mencegah download offline)
-    if (e.ctrlKey && e.keyCode == 'S'.charCodeAt(0)) return false;
-  };
+    if (e.ctrlKey && e.key === 'u') {
+        e.preventDefault();
+    }
+
+    // Ctrl+Shift+C (Inspect Element)
+    if (e.ctrlKey && e.shiftKey && e.key === 'C') {
+        e.preventDefault();
+    }
+});
 </script>
+
+
+
 </body>
 </html>
